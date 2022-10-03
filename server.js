@@ -25,12 +25,17 @@ let users = []
 io.on("connection", (socket) => {
     console.log("connected to ", socket.id)
     socket.on("adduser", (username) => {
-        socket.user = {
+        socket.user = { // Temporarily added a hand
             username: username,
-            user_id: socket.id
+            user_id: socket.id,
+            hand: [`King ${username}`, `Queen ${username}`, `Jack ${username}`]
         }
         users.push(socket.user)
         io.sockets.emit("users", users)
+        if(users.length === 2) {
+            // game() // This emits the userlist to client
+            return
+        }
     })
     
     socket.on("message", (message) => {
@@ -42,6 +47,7 @@ io.on("connection", (socket) => {
 
     socket.on("display_my_hand", (userList) => {
         userList.forEach(u => {
+            console.log(u)
             io.to(u.user_id).emit("server_response_to_display_hand", u.hand)
         })
         
@@ -59,68 +65,68 @@ io.on("connection", (socket) => {
 
 // API CALLS
 
-// function game() {
-//     const options = {
-//         hostname: 'encrypted.google.com',
-//         port: 443,
-//         path: '/',
-//         method: 'GET'
-//       };
-      
-//       const req = globalThis.https.request(options, (res) => {
-//         console.log('statusCode:', res.statusCode);
-//         console.log('headers:', res.headers);
-      
-//         res.on('data', (d) => {
-//           process.stdout.write(d);
-//         });
-//       });
-      
-//       req.on('error', (e) => {
-//         console.error(e);
-//       });
-//       req.end();
-// }
-
-// let gameOn = false
-// let deck = {}
-
-
-// function game() {
-//     if(users.length === 2) {
-//         gameOn = true
-//         console.log("game ran")
+function game() {
+    console.log("game ran")
+    const options = {
+        hostname: 'www.deckofcardsapi.com',
+        port: 443,
+        path: '/api/deck/new/shuffle/?deck_count=1',
+        method: 'GET'
+    }
+              
+    const req = require("https").request(options, (res) => {
+        // console.log('statusCode:', res.statusCode);
+        // console.log('headers:', res.headers);
         
-//         deal()
-//     }
-// }
+        res.on('data', (d) => {
+            // process.stdout.write(d)
+            deck = JSON.parse(d)
+            deal(deck.deck_id)
+        })
+    })
+        
+    req.on('error', (e) => {
+        console.error("VIRHE OLI:", e)
+    })
+    req.end()
+}
 
-// async function deal() {
-//     console.log("deal ran")
-//     const response1 = await fetch(`https://www.deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1`)
-//     const deckFromAPI = await response1.json().then(_deck => {
-//         // console.log(_deck)
-//         deck = _deck
-//     })
+function deal(id) {
+    console.log("deal ran")
 
-//     console.log("deckFromAPI, ", deckFromAPI)
+    const options = {
+        hostname: `www.deckofcardsapi.com`,
+        port: 443,
+        path: `/api/deck/${id}/draw/?count=${10}`, // This line has error
+        method: 'GET'
+    }
 
-//     const response2 = await fetch(`https://www.deckofcardsapi.com/api/deck/${deck.deck_id}/draw/?count=${10}`)
-//     const pileFromAPI = await response2.json().then(_pile => {
-//         console.log("pile, ", _pile)
-//         cleanPile = _pile.cards
-//         pile2 = cleanPile.splice(5)
-//         users[0].hand = cleanPile
-//         users[1].hand = pile2
+    let output = ""
+              
+    const req = require("https").request(options, (res) => {
+        // console.log('statusCode:', res.statusCode);
+        // console.log('headers:', res.headers);
+        
+        res.on('data', (d) => {
+            // process.stdout.write(d)
+            output += d
+            // tenCards = JSON.parse(d)
 
-//     })
+        })
 
-//     console.log("pileFromAPI, ", pileFromAPI)
-
-// }
-
-// function display() {
-//     return
-
-// }
-
+        res.on('end', () => {
+            tenCards = JSON.parse(output)
+            cleanPile = tenCards.cards
+            const pile2 = cleanPile.splice(5)
+            users[0].hand = cleanPile
+            users[1].hand = pile2
+            console.log(users[0].hand)
+            io.sockets.emit("users", users)
+        })
+    })
+        
+    req.on('error', (e) => {
+        console.error("DEAL VIRHE OLI", e)
+    })
+    req.end()
+}

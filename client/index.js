@@ -10,9 +10,11 @@ const userAddForm = document.querySelector(".modal")
 const backDrop = document.querySelector(".backdrop")
 const userAddInput = document.querySelector(".modal input")
 
+const chatapp = document.querySelector(".chatapp")
 const elseCard = document.querySelector(".else-card")
 const yourCard = document.querySelector(".your-card")
 const yourHand = document.querySelector("#your-hand")
+
 
 
 let messages = []
@@ -34,14 +36,27 @@ socket.on("users", (_users) => {
 })
 
 socket.on("server_response_to_display_hand", (hand) => {
-    //display hand
+    updateGame(hand)
 })
 
 // EVENT LISTENERS
 messageForm.addEventListener("submit", messageSubmitHandler)
 userAddForm.addEventListener("submit", userAddHandler)
+chatapp.addEventListener("click", chatappHandler)
 
-
+/* 
+`<li>
+<p>${messages[i].user.username}</p>
+<p>${messages[i].message}</p>
+<div class="aa">
+<img class="a" width="30px" height="45px" src="${messages[i].user.hand[0].image}">
+<img class="a" width="30px" height="45px" src="${messages[i].user.hand[1].image}">
+<img class="a" width="30px" height="45px" src="${messages[i].user.hand[2].image}">
+<img class="a" width="30px" height="45px" src="${messages[i].user.hand[3].image}">
+<img class="a" width="30px" height="45px" src="${messages[i].user.hand[4].image}">
+</div>
+</li>`
+*/
 
 function messageSubmitHandler(e) {
     e.preventDefault()
@@ -60,19 +75,13 @@ function messageSubmitHandler(e) {
 function updateMessages() {
     messageList.textContent = ""
     for(let i = 0; i < messages.length; i++) {
-        let userId = messages[i].user.user_id
-        const indexOfUser = users.findIndex(u => u.user_id == userId)
+        // let userId = messages[i].user.user_id
+        // const indexOfUser = users.findIndex(u => u.user_id == userId)
+        // console.log(users[indexOfUser])
         messageList.innerHTML += `<li>
-                                <p>${messages[i].user.username}, ${indexOfUser}</p>` + 
-                                `<div class="aa">` +
-                                `<img class="a" width="30px" height="45px" src="${users[indexOfUser].hand[0].image}"/>` +
-                                `<img class="a" width="30px" height="45px" src="${users[indexOfUser].hand[1].image}"/>` +
-                                `<img class="a" width="30px" height="45px" src="${users[indexOfUser].hand[2].image}"/>` +
-                                `<img class="a" width="30px" height="45px" src="${users[indexOfUser].hand[3].image}"/>` +
-                                `<img class="a" width="30px" height="45px" src="${users[indexOfUser].hand[4].image}"/>` +
-                                `</div>` +
-                                `<p>${messages[i].message}</p>
-                                </li>`
+            <p>${messages[i].user.username}</p>
+            <p>${messages[i].message}</p>
+            </li>`
     }
 }
 
@@ -95,5 +104,21 @@ function userAddHandler(e) {
     socket.emit("adduser", username)
     userAddForm.classList.add("disappear")
     backDrop.classList.add("disappear")
+
+}
+
+function chatappHandler() {
+    console.log(users[0].hand)
+    socket.emit("display_my_hand", users)
+}
+
+function updateGame(hand) {
+    yourHand.textContent = ""
+
+
+    for(let i = 0; i < hand.length; i++) {
+        // yourHand.innerHTML += `<span><img class="a" width="30px" height="45px" src="${hand[i].image}"></span>`
+        yourHand.innerHTML += `<span class="span-hand">${hand[i]}</span>`
+    }
 
 }

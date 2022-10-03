@@ -157,3 +157,9 @@ form.input button{
     
 
 }
+
+.span-hand {
+    margin: 1px;
+    border: 1px solid black;
+    cursor: pointer;
+}
